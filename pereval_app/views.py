@@ -30,6 +30,7 @@ class ImagesViewSet(ModelViewSet):
 class PerevalViewSet(ModelViewSet):
     queryset = Pereval.objects.all()
     serializer_class = PerevalSerializer
+    http_method_names = ['get', 'post']
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
