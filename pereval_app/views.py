@@ -1,4 +1,7 @@
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.response import Response
+from rest_framework import status
+from django.db import DatabaseError
 
 from pereval_app.models import Pereval, User, Coords, Level, Images
 from pereval_app.serializers import PerevalSerializer
@@ -28,3 +31,21 @@ class PerevalViewSet(ModelViewSet):
     queryset = Pereval.objects.all()
     serializer_class = PerevalSerializer
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        try:
+            if not serializer.is_valid():
+                return Response(
+                    {'status': 400, 'message': serializer.errors, 'id': None},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            serializer.save()
+            return Response(
+                {'status': 200, 'message': None, 'id': serializer.instance.id},
+                status=status.HTTP_200_OK
+            )
+        except DatabaseError:
+            return Response(
+                {'status': 500, 'message': "Ошибка подключения к базе данных", 'id': None},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
