@@ -2,6 +2,7 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework import status
 from django.db import DatabaseError
+from django.forms.models import model_to_dict
 
 from pereval_app.models import Pereval, User, Coords, Level, Images
 from pereval_app.serializers import PerevalSerializer
@@ -30,7 +31,7 @@ class ImagesViewSet(ModelViewSet):
 class PerevalViewSet(ModelViewSet):
     queryset = Pereval.objects.all()
     serializer_class = PerevalSerializer
-    http_method_names = ['get', 'post']
+    http_method_names = ['get', 'post', 'patch']
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -50,3 +51,29 @@ class PerevalViewSet(ModelViewSet):
                 {'status': 500, 'message': "Ошибка подключения к базе данных", 'id': None},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+    def partial_update(self, request, *args, **kwargs):
+        pereval_obj = self.get_object()
+        pereval_data = request.data
+        serializer = self.get_serializer(pereval_obj, data=pereval_data, partial=True)
+
+        pereval_user = pereval_obj.user
+        user_dict = model_to_dict(pereval_user)
+        user_dict.pop('id')
+        user_data = pereval_data.get('user')
+
+        if pereval_obj.status != 'new':
+            return Response(
+                {
+                    'state': 0,
+                    'message': f"Перевал можно обновить только в статусе 'new'! Текущий статус: {pereval_obj.status}"
+                }
+            )
+
+        if user_data and user_dict != user_data:
+            return Response({'state': 0, 'message': 'Нельзя изменять данные пользователя!'})
+
+        if serializer.is_valid():
+            serializer.save()
+        return Response({'state': 1, 'message': 'Перевал успешно обновлён!'})
+
