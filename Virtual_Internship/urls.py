@@ -19,7 +19,7 @@ from django.urls import path, include
 from django.views.generic import RedirectView
 from rest_framework import routers
 from pereval_app.views import PerevalViewSet
-
+from .yasg import urlpatterns as yasg_urlpatterns
 
 router = routers.DefaultRouter()
 
@@ -31,3 +31,4 @@ urlpatterns = [
     path('api/', include(router.urls)),
 ]
 
+urlpatterns += yasg_urlpatterns
